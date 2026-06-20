@@ -5,6 +5,19 @@ import {
   RecaptchaVerifier,
   signInWithPhoneNumber
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDocs,
+  getFirestore,
+  limit,
+  orderBy,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCC2x7648Che9NmplEif4q8tZcU8ukkZmg",
@@ -18,9 +31,10 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const firebaseAuth = getAuth(firebaseApp);
+const firebaseDb = getFirestore(firebaseApp);
 firebaseAuth.useDeviceLanguage();
 
-const listings = [
+const demoListings = [
   {
     name: "Nisha Shah",
     type: "provider",
@@ -94,6 +108,8 @@ const listings = [
     terms: "Education fee support. Can repay from monthly salary, documents available after match."
   }
 ];
+
+let listings = [...demoListings];
 
 listings[0].purpose = "Business";
 listings[0].mobileVerified = true;
@@ -345,6 +361,91 @@ function setContactVisibility(value) {
 function setBorrowerVerified(isVerified) {
   localStorage.setItem("moneybridge-borrower-verified", String(isVerified));
   borrowerSignupStatus.textContent = isVerified ? t("borrowerVerified") : t("borrowerNotVerified");
+}
+
+async function saveUserProfile(user, extra = {}) {
+  if (!user?.uid) return;
+  await setDoc(doc(firebaseDb, "users", user.uid), {
+    phone: user.phoneNumber || localStorage.getItem("moneybridge-borrower-mobile") || "",
+    mobileVerified: Boolean(user.phoneNumber) || localStorage.getItem("moneybridge-borrower-verified") === "true",
+    borrowerPurpose: localStorage.getItem("moneybridge-borrower-purpose") || borrowerPurpose?.value || "Let's discuss",
+    verifiedProfile: isVerifiedUser,
+    premium: isPremiumUser,
+    leadCredits: paidLeadCredits,
+    updatedAt: serverTimestamp(),
+    ...extra
+  }, { merge: true });
+}
+
+async function updateCurrentUserProfile(extra = {}) {
+  if (!firebaseAuth.currentUser) return;
+  await saveUserProfile(firebaseAuth.currentUser, extra);
+}
+
+function listingFromDoc(snapshot) {
+  const data = snapshot.data();
+  return {
+    id: snapshot.id,
+    name: data.name || "MoneyBridge user",
+    type: data.type || "receiver",
+    city: data.city || "Mumbai",
+    distance: data.distance || "Current location",
+    amount: Number(data.amount || 0),
+    interest: data.interest ?? "Let's discuss",
+    duration: data.duration || "Let's discuss",
+    verified: Boolean(data.verified),
+    mobileVerified: Boolean(data.mobileVerified),
+    aadharVerified: Boolean(data.aadharVerified),
+    premium: Boolean(data.premium),
+    purpose: data.purpose || "Let's discuss",
+    initials: data.initials || "MB",
+    phone: data.phone || "",
+    terms: data.terms || "Terms can be discussed after matching."
+  };
+}
+
+async function loadFirestoreListings() {
+  try {
+    const listingQuery = query(collection(firebaseDb, "listings"), orderBy("createdAt", "desc"), limit(50));
+    const snapshot = await getDocs(listingQuery);
+    const firestoreListings = snapshot.docs.map(listingFromDoc);
+    listings = [...firestoreListings, ...demoListings];
+    renderListings();
+  } catch (error) {
+    paymentStatus.textContent = `Database read needs Firestore rules update: ${error.message}`;
+  }
+}
+
+async function saveListing(listing) {
+  const user = firebaseAuth.currentUser;
+  if (!user) {
+    throw new Error("Please complete OTP login before publishing a real post.");
+  }
+  const docRef = await addDoc(collection(firebaseDb, "listings"), {
+    ...listing,
+    userId: user.uid,
+    phone: user.phoneNumber || localStorage.getItem("moneybridge-borrower-mobile") || "",
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
+  return { ...listing, id: docRef.id };
+}
+
+async function savePaymentStatus(plan, payment = {}) {
+  const user = firebaseAuth.currentUser;
+  if (!user) return;
+  await addDoc(collection(firebaseDb, "payments"), {
+    userId: user.uid,
+    plan,
+    paymentId: payment.paymentId || "",
+    orderId: payment.orderId || "",
+    createdAt: serverTimestamp()
+  });
+  await updateCurrentUserProfile({
+    verifiedProfile: isVerifiedUser,
+    premium: isPremiumUser,
+    leadCredits: paidLeadCredits
+  });
 }
 
 function normalizePhoneNumber(value) {
@@ -629,13 +730,14 @@ async function startRazorpayPayment(plan) {
       theme: { color: "#0f766e" },
       handler: async (response) => {
         paymentStatus.textContent = "Verifying payment...";
-        await postJson("/.netlify/functions/verify-razorpay-payment", {
+        const verifiedPayment = await postJson("/.netlify/functions/verify-razorpay-payment", {
           plan,
           orderId: response.razorpay_order_id,
           paymentId: response.razorpay_payment_id,
           signature: response.razorpay_signature
         });
         applyPaidPlan(plan);
+        await savePaymentStatus(plan, verifiedPayment);
       },
       modal: {
         ondismiss: () => {
@@ -732,6 +834,11 @@ document.querySelector("#otpForm").addEventListener("submit", async (event) => {
     localStorage.setItem("moneybridge-firebase-uid", result.user.uid);
     localStorage.setItem("moneybridge-borrower-purpose", borrowerPurpose.value);
     setBorrowerVerified(true);
+    await saveUserProfile(result.user, {
+      borrowerPurpose: borrowerPurpose.value,
+      mobileVerified: true,
+      createdAt: serverTimestamp()
+    });
     otpDialog.close();
   } catch (error) {
     otpHelp.textContent = error?.message || "Invalid OTP. Please check the code and try again.";
@@ -779,7 +886,7 @@ shareReferralBtn.addEventListener("click", async () => {
   }
 });
 
-document.querySelector("#postForm").addEventListener("submit", (event) => {
+document.querySelector("#postForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!isPremiumUser && monthlyPostsUsed >= 3) {
     document.querySelector("#postPlanStatus").textContent = t("freePostLimit");
@@ -790,7 +897,7 @@ document.querySelector("#postForm").addEventListener("submit", (event) => {
     monthlyPostsUsed += 1;
     localStorage.setItem("moneybridge-monthly-posts-used", String(monthlyPostsUsed));
   }
-  listings.unshift({
+  const listing = {
     name: "Arjun Rao",
     type: data.type,
     city: data.city,
@@ -805,19 +912,28 @@ document.querySelector("#postForm").addEventListener("submit", (event) => {
     purpose: data.purpose || "Let's discuss",
     initials: "AR",
     terms: data.terms
-  });
-  postDialog.close();
-  switchView("home");
-  renderListings();
+  };
+  try {
+    const savedListing = await saveListing(listing);
+    listings.unshift(savedListing);
+    await updateCurrentUserProfile();
+    postDialog.close();
+    switchView("home");
+    renderListings();
+  } catch (error) {
+    document.querySelector("#postPlanStatus").textContent = error.message;
+  }
 });
 
-onAuthStateChanged(firebaseAuth, (user) => {
+onAuthStateChanged(firebaseAuth, async (user) => {
   if (!user) return;
   localStorage.setItem("moneybridge-firebase-uid", user.uid);
   if (user.phoneNumber) {
     localStorage.setItem("moneybridge-borrower-mobile", user.phoneNumber);
     setBorrowerVerified(true);
   }
+  await saveUserProfile(user);
+  await loadFirestoreListings();
 });
 
 if ("serviceWorker" in navigator) {

@@ -1,4 +1,4 @@
-const CACHE = "moneybridge-v3";
+const CACHE = "moneybridge-v4";
 const ASSETS = [
   "./",
   "./index.html",
