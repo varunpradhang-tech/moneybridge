@@ -18,6 +18,12 @@ import {
   setDoc,
   updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import {
+  getDownloadURL,
+  getStorage,
+  ref as storageRef,
+  uploadBytes
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCC2x7648Che9NmplEif4q8tZcU8ukkZmg",
@@ -32,6 +38,7 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const firebaseAuth = getAuth(firebaseApp);
 const firebaseDb = getFirestore(firebaseApp);
+const firebaseStorage = getStorage(firebaseApp);
 firebaseAuth.useDeviceLanguage();
 
 const demoListings = [
@@ -182,6 +189,10 @@ const paymentStatus = document.querySelector("#paymentStatus");
 const termsDialog = document.querySelector("#termsDialog");
 const termsAccept = document.querySelector("#termsAccept");
 const acceptTermsBtn = document.querySelector("#acceptTermsBtn");
+const kycForm = document.querySelector("#kycForm");
+const kycFile = document.querySelector("#kycFile");
+const kycIdType = document.querySelector("#kycIdType");
+const kycStatus = document.querySelector("#kycStatus");
 let recaptchaVerifier;
 let firebaseOtpConfirmation;
 const blockedUsers = new Set(JSON.parse(localStorage.getItem("moneybridge-blocked-users") || "[]"));
@@ -431,6 +442,59 @@ async function saveListing(listing) {
 async function savePaymentStatus(plan, payment = {}) {
   localStorage.setItem("moneybridge-last-payment-id", payment.paymentId || "");
   localStorage.setItem("moneybridge-last-payment-plan", plan);
+}
+
+async function submitKycRequest(event) {
+  event.preventDefault();
+  const user = firebaseAuth.currentUser;
+  if (!user) {
+    kycStatus.textContent = "Please complete OTP login before submitting KYC.";
+    return;
+  }
+  const file = kycFile.files?.[0];
+  if (!file) {
+    kycStatus.textContent = "Please choose an ID document first.";
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    kycStatus.textContent = "File is too large. Please upload a file under 5 MB.";
+    return;
+  }
+
+  kycStatus.textContent = "Uploading document securely...";
+  const safeName = file.name.replace(/[^a-z0-9._-]/gi, "_");
+  const path = `kyc/${user.uid}/${Date.now()}-${safeName}`;
+  const fileRef = storageRef(firebaseStorage, path);
+
+  try {
+    await uploadBytes(fileRef, file, {
+      contentType: file.type || "application/octet-stream",
+      customMetadata: {
+        userId: user.uid,
+        idType: kycIdType.value
+      }
+    });
+    const downloadUrl = await getDownloadURL(fileRef);
+    await addDoc(collection(firebaseDb, "kycRequests"), {
+      userId: user.uid,
+      phone: user.phoneNumber || localStorage.getItem("moneybridge-borrower-mobile") || "",
+      fullName: document.querySelector("#profileFullName").value.trim(),
+      city: document.querySelector("#profileCity").value.trim(),
+      idType: kycIdType.value,
+      filePath: path,
+      fileUrl: downloadUrl,
+      status: "pending",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    await updateCurrentUserProfile({
+      kycStatus: "pending",
+      kycRequestedAt: serverTimestamp()
+    });
+    kycStatus.textContent = "KYC submitted. Admin review is pending.";
+  } catch (error) {
+    kycStatus.textContent = error.message || "Could not submit KYC. Please try again.";
+  }
 }
 
 function normalizePhoneNumber(value) {
@@ -838,6 +902,8 @@ document.querySelector("#otpForm").addEventListener("submit", async (event) => {
 document.querySelectorAll(".payment-btn").forEach((button) => {
   button.addEventListener("click", () => startRazorpayPayment(button.dataset.plan));
 });
+
+kycForm.addEventListener("submit", submitKycRequest);
 
 acceptTermsBtn.addEventListener("click", () => {
   if (!termsAccept.checked) {

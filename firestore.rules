@@ -17,6 +17,8 @@ service cloud.firestore {
           'phone',
           'mobileVerified',
           'borrowerPurpose',
+          'kycStatus',
+          'kycRequestedAt',
           'createdAt',
           'updatedAt'
         ]);
@@ -25,6 +27,8 @@ service cloud.firestore {
           'phone',
           'mobileVerified',
           'borrowerPurpose',
+          'kycStatus',
+          'kycRequestedAt',
           'updatedAt'
         ]);
     }
@@ -38,6 +42,12 @@ service cloud.firestore {
     match /payments/{paymentId} {
       allow read: if signedIn() && resource.data.userId == request.auth.uid;
       allow create, update, delete: if false;
+    }
+
+    match /kycRequests/{requestId} {
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
     }
 
     match /reports/{reportId} {

@@ -229,20 +229,21 @@
             <button class="primary-btn profile-action" id="borrowerSignupBtn" type="button">Borrower mobile OTP signup</button>
             <small id="borrowerSignupStatus">Borrower mobile not verified</small>
           </div>
-          <form class="profile-form">
-            <label>Full name<input value="Arjun Rao"></label>
-            <label>Mobile number<input value="+91 98765 43210"></label>
-            <label>City<input value="Mumbai"></label>
+          <form class="profile-form" id="kycForm">
+            <label>Full name<input name="fullName" id="profileFullName" value="Arjun Rao"></label>
+            <label>Mobile number<input name="mobile" id="profileMobile" value="+91 98765 43210"></label>
+            <label>City<input name="city" id="profileCity" value="Mumbai"></label>
             <label>Government ID type
-              <select>
+              <select name="idType" id="kycIdType">
                 <option>Aadhaar</option>
                 <option>PAN</option>
                 <option>Passport</option>
                 <option>Driving license</option>
               </select>
             </label>
-            <label>Upload ID document<input type="file"></label>
-            <button type="button" class="primary-btn">Submit for verification</button>
+            <label>Upload ID document<input name="idDocument" id="kycFile" type="file" accept="image/*,.pdf"></label>
+            <p class="helper-text" id="kycStatus">Upload your ID document for manual admin review.</p>
+            <button type="submit" class="primary-btn">Submit for verification</button>
           </form>
         </div>
       </section>
