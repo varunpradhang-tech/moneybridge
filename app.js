@@ -9,6 +9,7 @@ import {
   addDoc,
   collection,
   doc,
+  getDoc,
   getDocs,
   getFirestore,
   limit,
@@ -196,6 +197,7 @@ const kycForm = document.querySelector("#kycForm");
 const kycFile = document.querySelector("#kycFile");
 const kycIdType = document.querySelector("#kycIdType");
 const kycStatus = document.querySelector("#kycStatus");
+const profileVerificationBadge = document.querySelector(".profile-card .verified");
 let recaptchaVerifier;
 let firebaseOtpConfirmation;
 let testOtpSession = null;
@@ -485,6 +487,40 @@ function setContactVisibility(value) {
 function setBorrowerVerified(isVerified) {
   localStorage.setItem("moneybridge-borrower-verified", String(isVerified));
   borrowerSignupStatus.textContent = isVerified ? t("borrowerVerified") : t("borrowerNotVerified");
+}
+
+function updateProfileVerificationUi(userData = {}) {
+  const approved = userData.verifiedProfile === true || userData.kycStatus === "approved" || userData.aadharVerified === true;
+  isVerifiedUser = approved;
+  localStorage.setItem("moneybridge-verified-profile", String(approved));
+
+  if (typeof userData.premium === "boolean") {
+    isPremiumUser = userData.premium;
+    localStorage.setItem("moneybridge-premium-active", String(isPremiumUser));
+  }
+  if (Number.isFinite(Number(userData.leadCredits))) {
+    paidLeadCredits = Number(userData.leadCredits);
+    persistLeadState();
+  }
+
+  if (profileVerificationBadge) {
+    profileVerificationBadge.textContent = approved ? t("idVerified") : t("pending");
+  }
+  if (kycStatus) {
+    if (approved) {
+      kycStatus.textContent = "KYC approved. Your profile is verified.";
+    } else if (userData.kycStatus === "pending") {
+      kycStatus.textContent = "KYC submitted. Admin review is pending.";
+    }
+  }
+}
+
+async function syncCurrentUserProfile(user) {
+  if (!user?.uid) return;
+  const snapshot = await getDoc(doc(firebaseDb, "users", user.uid));
+  if (snapshot.exists()) {
+    updateProfileVerificationUi(snapshot.data());
+  }
 }
 
 async function saveUserProfile(user, extra = {}) {
@@ -1144,6 +1180,10 @@ onAuthStateChanged(firebaseAuth, async (user) => {
   } catch (error) {
     console.warn("Profile sync failed:", error);
   }
+  await syncCurrentUserProfile(user).catch((error) => {
+    console.warn("Profile load failed:", error);
+  });
+  translatePage();
   await loadFirestoreListings();
 });
 
@@ -1157,6 +1197,11 @@ applyTheme(localStorage.getItem("moneybridge-theme") || "system");
 applyLanguage(localStorage.getItem("moneybridge-language") || "en");
 setContactVisibility(localStorage.getItem("moneybridge-contact-visibility") || "matched");
 setBorrowerVerified(localStorage.getItem("moneybridge-borrower-verified") === "true");
+updateProfileVerificationUi({
+  verifiedProfile: localStorage.getItem("moneybridge-verified-profile") === "true",
+  premium: localStorage.getItem("moneybridge-premium-active") === "true",
+  leadCredits: Number(localStorage.getItem("moneybridge-paid-lead-credits") || "0")
+});
 updateNotificationStatus();
 if (localStorage.getItem("moneybridge-terms-accepted") !== "true") {
   termsDialog.showModal();
