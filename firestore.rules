@@ -2,22 +2,46 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function owns(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
     match /users/{userId} {
-      allow create, read, update: if request.auth != null && request.auth.uid == userId;
+      allow read: if owns(userId);
+      allow create: if owns(userId)
+        && request.resource.data.keys().hasOnly([
+          'phone',
+          'mobileVerified',
+          'borrowerPurpose',
+          'createdAt',
+          'updatedAt'
+        ]);
+      allow update: if owns(userId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'phone',
+          'mobileVerified',
+          'borrowerPurpose',
+          'updatedAt'
+        ]);
     }
 
     match /listings/{listingId} {
       allow read: if true;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if signedIn() && resource.data.userId == request.auth.uid;
     }
 
     match /payments/{paymentId} {
-      allow create, read: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create, update, delete: if false;
     }
 
     match /reports/{reportId} {
-      allow create: if request.auth != null;
+      allow create: if signedIn();
       allow read, update, delete: if false;
     }
   }

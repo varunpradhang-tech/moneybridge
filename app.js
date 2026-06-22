@@ -369,9 +369,6 @@ async function saveUserProfile(user, extra = {}) {
     phone: user.phoneNumber || localStorage.getItem("moneybridge-borrower-mobile") || "",
     mobileVerified: Boolean(user.phoneNumber) || localStorage.getItem("moneybridge-borrower-verified") === "true",
     borrowerPurpose: localStorage.getItem("moneybridge-borrower-purpose") || borrowerPurpose?.value || "Let's discuss",
-    verifiedProfile: isVerifiedUser,
-    premium: isPremiumUser,
-    leadCredits: paidLeadCredits,
     updatedAt: serverTimestamp(),
     ...extra
   }, { merge: true });
@@ -432,20 +429,8 @@ async function saveListing(listing) {
 }
 
 async function savePaymentStatus(plan, payment = {}) {
-  const user = firebaseAuth.currentUser;
-  if (!user) return;
-  await addDoc(collection(firebaseDb, "payments"), {
-    userId: user.uid,
-    plan,
-    paymentId: payment.paymentId || "",
-    orderId: payment.orderId || "",
-    createdAt: serverTimestamp()
-  });
-  await updateCurrentUserProfile({
-    verifiedProfile: isVerifiedUser,
-    premium: isPremiumUser,
-    leadCredits: paidLeadCredits
-  });
+  localStorage.setItem("moneybridge-last-payment-id", payment.paymentId || "");
+  localStorage.setItem("moneybridge-last-payment-plan", plan);
 }
 
 function normalizePhoneNumber(value) {
@@ -710,10 +695,15 @@ async function startRazorpayPayment(plan) {
 
   paymentStatus.textContent = `Creating ${selectedPlan.label} payment order...`;
   try {
+    if (!firebaseAuth.currentUser) {
+      paymentStatus.textContent = "Please complete OTP login before payment.";
+      return;
+    }
+    const idToken = await firebaseAuth.currentUser.getIdToken();
     const order = await postJson("/.netlify/functions/create-razorpay-order", {
       plan,
       phone: localStorage.getItem("moneybridge-borrower-mobile") || "",
-      firebaseUid: localStorage.getItem("moneybridge-firebase-uid") || ""
+      idToken
     });
 
     const checkout = new window.Razorpay({
