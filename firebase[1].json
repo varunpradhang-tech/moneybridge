@@ -1,0 +1,40 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      ".firebaserc",
+      "functions/**",
+      "node_modules/**",
+      "firestore.rules"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/create-razorpay-order",
+        "function": {
+          "functionId": "createRazorpayOrder",
+          "region": "asia-south1"
+        }
+      },
+      {
+        "source": "/api/verify-razorpay-payment",
+        "function": {
+          "functionId": "verifyRazorpayPayment",
+          "region": "asia-south1"
+        }
+      }
+    ]
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default"
+    }
+  ],
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  }
+}
