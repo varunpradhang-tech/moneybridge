@@ -888,10 +888,12 @@ document.querySelector("#otpForm").addEventListener("submit", async (event) => {
     localStorage.setItem("moneybridge-firebase-uid", result.user.uid);
     localStorage.setItem("moneybridge-borrower-purpose", borrowerPurpose.value);
     setBorrowerVerified(true);
-    await saveUserProfile(result.user, {
+    saveUserProfile(result.user, {
       borrowerPurpose: borrowerPurpose.value,
       mobileVerified: true,
       createdAt: serverTimestamp()
+    }).catch((error) => {
+      console.warn("Profile save after OTP failed:", error);
     });
     otpDialog.close();
   } catch (error) {
@@ -988,7 +990,11 @@ onAuthStateChanged(firebaseAuth, async (user) => {
     localStorage.setItem("moneybridge-borrower-mobile", user.phoneNumber);
     setBorrowerVerified(true);
   }
-  await saveUserProfile(user);
+  try {
+    await saveUserProfile(user);
+  } catch (error) {
+    console.warn("Profile sync failed:", error);
+  }
   await loadFirestoreListings();
 });
 

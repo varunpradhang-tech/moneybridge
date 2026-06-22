@@ -12,25 +12,8 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if owns(userId);
-      allow create: if owns(userId)
-        && request.resource.data.keys().hasOnly([
-          'phone',
-          'mobileVerified',
-          'borrowerPurpose',
-          'kycStatus',
-          'kycRequestedAt',
-          'createdAt',
-          'updatedAt'
-        ]);
-      allow update: if owns(userId)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'phone',
-          'mobileVerified',
-          'borrowerPurpose',
-          'kycStatus',
-          'kycRequestedAt',
-          'updatedAt'
-        ]);
+      allow create: if owns(userId);
+      allow update: if owns(userId);
     }
 
     match /listings/{listingId} {
