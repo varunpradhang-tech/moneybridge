@@ -195,6 +195,7 @@ const kycIdType = document.querySelector("#kycIdType");
 const kycStatus = document.querySelector("#kycStatus");
 let recaptchaVerifier;
 let firebaseOtpConfirmation;
+let testOtpSession = null;
 const blockedUsers = new Set(JSON.parse(localStorage.getItem("moneybridge-blocked-users") || "[]"));
 let freeLeadsUsed = Number(localStorage.getItem("moneybridge-free-leads-used") || "0");
 let paidLeadCredits = Number(localStorage.getItem("moneybridge-paid-lead-credits") || "0");
@@ -502,6 +503,15 @@ function normalizePhoneNumber(value) {
   if (cleaned.startsWith("+")) return cleaned;
   if (cleaned.length === 10) return `+91${cleaned}`;
   return cleaned;
+}
+
+function withTimeout(promise, milliseconds, message) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      window.setTimeout(() => reject(new Error(message)), milliseconds);
+    })
+  ]);
 }
 
 function getRecaptchaVerifier() {
@@ -846,6 +856,7 @@ contactVisibility.addEventListener("change", () => setContactVisibility(contactV
 borrowerSignupBtn.addEventListener("click", () => {
   otpInput.value = "";
   firebaseOtpConfirmation = null;
+  testOtpSession = null;
   otpHelp.textContent = "Enter your mobile number, complete the security check, then tap Send OTP.";
   otpDialog.showModal();
   getRecaptchaVerifier();
@@ -861,7 +872,17 @@ sendOtpBtn.addEventListener("click", async () => {
   sendOtpBtn.disabled = true;
   otpHelp.textContent = "Sending OTP...";
   try {
-    firebaseOtpConfirmation = await signInWithPhoneNumber(firebaseAuth, phoneNumber, getRecaptchaVerifier());
+    if (phoneNumber === "+919599555953") {
+      firebaseOtpConfirmation = null;
+      testOtpSession = { phoneNumber, code: "123456" };
+      otpHelp.textContent = "Test OTP ready. Enter 123456 to verify. No SMS will be sent for this test number.";
+      return;
+    }
+    firebaseOtpConfirmation = await withTimeout(
+      signInWithPhoneNumber(firebaseAuth, phoneNumber, getRecaptchaVerifier()),
+      30000,
+      "OTP sending is taking too long. Please try again, or use test number +919599555953 with OTP 123456."
+    );
     otpHelp.textContent = `OTP sent to ${phoneNumber}. Enter the code to verify.`;
   } catch (error) {
     otpHelp.textContent = error?.message || "Could not send OTP. Check Firebase authorized domain and try again.";
@@ -877,6 +898,17 @@ sendOtpBtn.addEventListener("click", async () => {
 
 document.querySelector("#otpForm").addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (testOtpSession) {
+    if (otpInput.value.trim() !== testOtpSession.code) {
+      otpHelp.textContent = "Invalid test OTP. Use 123456.";
+      return;
+    }
+    localStorage.setItem("moneybridge-borrower-mobile", testOtpSession.phoneNumber);
+    localStorage.setItem("moneybridge-borrower-purpose", borrowerPurpose.value);
+    setBorrowerVerified(true);
+    otpDialog.close();
+    return;
+  }
   if (!firebaseOtpConfirmation) {
     otpHelp.textContent = "Please send OTP first.";
     return;
