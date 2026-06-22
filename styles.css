@@ -399,7 +399,7 @@ select, input, textarea {
   overflow: hidden;
 }
 
-.toggle-row, .permission-row, .refer-card, .pricing-grid {
+.toggle-row, .permission-row, .refer-card, .pricing-grid, .legal-card {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -420,12 +420,15 @@ select, input, textarea {
 .permission-row strong,
 .permission-row small,
 .refer-card strong,
-.refer-card small {
+.refer-card small,
+.legal-card strong,
+.legal-card small {
   display: block;
 }
 
 .permission-row small,
-.refer-card small {
+.refer-card small,
+.legal-card small {
   color: var(--muted);
   margin-top: 4px;
 }
@@ -439,6 +442,44 @@ select, input, textarea {
   align-items: flex-start;
   flex-wrap: wrap;
   background: color-mix(in srgb, var(--accent) 10%, var(--panel));
+}
+
+.legal-card {
+  align-items: flex-start;
+  background: color-mix(in srgb, var(--brand) 6%, var(--panel));
+}
+
+.legal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.legal-doc {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  max-height: min(68vh, 620px);
+  overflow: auto;
+}
+
+.legal-doc h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.legal-doc p {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.legal-doc ul {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text);
+  line-height: 1.55;
 }
 
 .refer-code {
@@ -492,7 +533,7 @@ select, input, textarea {
   font-size: 13px;
 }
 
-.toggle-row:last-child, .permission-row:last-child, .refer-card:last-child, .pricing-grid:last-child {
+.toggle-row:last-child, .permission-row:last-child, .refer-card:last-child, .pricing-grid:last-child, .legal-card:last-child {
   border-bottom: 0;
 }
 
@@ -793,7 +834,7 @@ dialog::backdrop {
     grid-template-columns: 46px 1fr;
   }
 
-  .toggle-row, .permission-row, .refer-card, .pricing-grid {
+  .toggle-row, .permission-row, .refer-card, .pricing-grid, .legal-card {
     display: block;
   }
 
@@ -804,10 +845,19 @@ dialog::backdrop {
   .toggle-row.stacked select,
   .permission-row .secondary-btn,
   .refer-card .primary-btn,
+  .legal-actions,
   .pricing-card,
   .refer-code {
     width: 100%;
     margin-top: 12px;
+  }
+
+  .legal-actions {
+    justify-content: stretch;
+  }
+
+  .legal-actions .secondary-btn {
+    flex: 1 1 140px;
   }
 
   .detail-actions {

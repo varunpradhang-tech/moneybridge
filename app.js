@@ -189,6 +189,9 @@ const paymentStatus = document.querySelector("#paymentStatus");
 const termsDialog = document.querySelector("#termsDialog");
 const termsAccept = document.querySelector("#termsAccept");
 const acceptTermsBtn = document.querySelector("#acceptTermsBtn");
+const legalDialog = document.querySelector("#legalDialog");
+const legalDialogTitle = document.querySelector("#legalDialogTitle");
+const legalDialogBody = document.querySelector("#legalDialogBody");
 const kycForm = document.querySelector("#kycForm");
 const kycFile = document.querySelector("#kycFile");
 const kycIdType = document.querySelector("#kycIdType");
@@ -251,7 +254,9 @@ const translations = {
     idVerified: "Govt. ID verified", pending: "Verification pending", viewProfile: "View profile", message: "Message",
     interest: "interest", moneyProvider: "Money provider", moneyReceiver: "Money receiver", duration: "Duration",
     startSecureMessage: "Start secure message", messagesIntro: "Conversations with matched lenders and receivers.",
-    createPost: "Create post", profiles: "profiles", profileSingle: "profile"
+    createPost: "Create post", profiles: "profiles", profileSingle: "profile",
+    legalCenter: "Legal & policies", legalCenterHelp: "Review the terms, privacy, refund policy, and lending risk notice before using MoneyBridge.",
+    legalTerms: "Terms", legalPrivacy: "Privacy", legalRefund: "Refunds", legalRisk: "Risk notice"
   },
   hi: {
     home: "होम", settings: "सेटिंग्स", profile: "प्रोफाइल", messages: "संदेश", post: "पोस्ट",
@@ -288,7 +293,9 @@ const translations = {
     idVerified: "सरकारी ID verified", pending: "Verification pending", viewProfile: "Profile देखें", message: "Message",
     interest: "ब्याज", moneyProvider: "Money provider", moneyReceiver: "Money receiver", duration: "अवधि",
     startSecureMessage: "Secure message शुरू करें", messagesIntro: "Matched lenders और receivers से बातचीत।",
-    createPost: "Post बनाएं", profiles: "profiles", profileSingle: "profile"
+    createPost: "Post बनाएं", profiles: "profiles", profileSingle: "profile",
+    legalCenter: "Legal & policies", legalCenterHelp: "MoneyBridge इस्तेमाल करने से पहले terms, privacy, refund policy और lending risk notice पढ़ें।",
+    legalTerms: "Terms", legalPrivacy: "Privacy", legalRefund: "Refunds", legalRisk: "Risk notice"
   },
   pa: { home: "ਹੋਮ", settings: "ਸੈਟਿੰਗਜ਼", profile: "ਪ੍ਰੋਫਾਈਲ", messages: "ਸੁਨੇਹੇ", post: "ਪੋਸਟ", language: "ਭਾਸ਼ਾ", languageHelp: "ਆਪਣੀ ਪਸੰਦੀਦਾ ਐਪ ਭਾਸ਼ਾ ਚੁਣੋ।", providing: "ਦੇ ਰਹੇ ਹਨ", requiring: "ਲੋੜ ਹੈ", provider: "ਦੇਣ ਵਾਲਾ", receiver: "ਲੈਣ ਵਾਲਾ", location: "ਸਥਾਨ", type: "ਕਿਸਮ", amount: "ਰਕਮ", all: "ਸਭ", any: "ਕੋਈ ਵੀ", theme: "ਥੀਮ", light: "ਲਾਈਟ", dark: "ਡਾਰਕ", settingsIntro: "ਸੁਰੱਖਿਆ, ਨੋਟੀਫਿਕੇਸ਼ਨ, ਸਥਾਨ ਅਤੇ ਖਾਤਾ ਸੈਟਿੰਗਾਂ ਕੰਟਰੋਲ ਕਰੋ।", refer: "Refer & Earn", shareInvite: "Invite share ਕਰੋ", viewProfile: "ਪ੍ਰੋਫਾਈਲ ਵੇਖੋ", message: "ਸੁਨੇਹਾ" },
   mr: { home: "होम", settings: "सेटिंग्ज", profile: "प्रोफाइल", messages: "संदेश", post: "पोस्ट", language: "भाषा", languageHelp: "तुमची पसंतीची अॅप भाषा निवडा.", providing: "देणारे", requiring: "आवश्यक", provider: "देणारा", receiver: "घेणारा", location: "स्थान", type: "प्रकार", amount: "रक्कम", all: "सर्व", any: "कोणतेही", theme: "थीम", light: "लाईट", dark: "डार्क", settingsIntro: "सुरक्षा, सूचना, स्थान आणि खाते सेटिंग्ज नियंत्रित करा.", refer: "Refer & Earn", shareInvite: "Invite share करा", viewProfile: "प्रोफाइल पहा", message: "संदेश" },
@@ -310,9 +317,114 @@ translations.ru = { home: "Главная", settings: "Настройки", prof
 translations.ja = { home: "ホーム", settings: "設定", profile: "プロフィール", messages: "メッセージ", post: "投稿", language: "言語", languageHelp: "アプリの言語を選択してください。", providing: "提供中", requiring: "必要", provider: "提供者", receiver: "受取人", location: "場所", type: "種類", amount: "金額", all: "すべて", any: "任意", theme: "テーマ", light: "ライト", dark: "ダーク", settingsIntro: "セキュリティ、通知、位置情報、アカウントを管理します。", refer: "紹介して獲得", shareInvite: "招待を共有", viewProfile: "プロフィールを見る", message: "メッセージ" };
 translations.ko = { home: "홈", settings: "설정", profile: "프로필", messages: "메시지", post: "게시", language: "언어", languageHelp: "원하는 앱 언어를 선택하세요.", providing: "제공 중", requiring: "필요함", provider: "제공자", receiver: "수신자", location: "위치", type: "유형", amount: "금액", all: "전체", any: "상관없음", theme: "테마", light: "라이트", dark: "다크", settingsIntro: "보안, 알림, 위치 및 계정 설정을 관리합니다.", refer: "추천하고 받기", shareInvite: "초대 공유", viewProfile: "프로필 보기", message: "메시지" };
 
+const legalDocs = {
+  en: {
+    terms: {
+      title: "Terms & Conditions",
+      sections: [
+        ["Platform role", "MoneyBridge is a technology platform that helps borrowers and lenders discover and contact each other. MoneyBridge is not a bank, NBFC, loan provider, loan broker, repayment guarantor, recovery agent, or financial advisor."],
+        ["User responsibility", "Users must verify identity, documents, repayment ability, source of funds, agreement terms, interest, tenure, and legal compliance independently before lending or borrowing."],
+        ["No guarantee", "MoneyBridge does not guarantee loan approval, lender availability, borrower authenticity, repayment, recovery, profit, interest income, or any financial outcome."],
+        ["User conduct", "Users must not post false information, impersonate others, harass users, collect illegal interest, use threats, or violate any applicable law."],
+        ["Account action", "MoneyBridge may restrict, suspend, or remove accounts, listings, messages, or payments where misuse, fraud, suspicious activity, or policy violation is suspected."]
+      ]
+    },
+    privacy: {
+      title: "Privacy Policy",
+      sections: [
+        ["Information collected", "We may collect mobile number, profile details, city/location preference, listings, messages, payment status, verification status, and uploaded KYC documents where provided."],
+        ["Use of information", "Information is used to operate the platform, show listings, support OTP login, process paid features, review verification requests, prevent fraud, and improve safety."],
+        ["Sharing", "Contact details are shown according to visibility settings and lead rules. Payment processing is handled by Razorpay. Authentication, database, storage, and hosting are handled through Firebase/Google services."],
+        ["KYC documents", "KYC uploads are used for review and trust features. Users should upload only their own valid documents. Sensitive documents should be stored and reviewed carefully by the admin."],
+        ["User control", "Users may request correction, restriction, or deletion of their profile data, subject to legal, safety, fraud-prevention, and accounting needs."]
+      ]
+    },
+    refund: {
+      title: "Refund & Cancellation Policy",
+      sections: [
+        ["Paid verification", "The Rs. 199 verification fee covers review and trust-profile processing. It does not guarantee approval, lender interest, borrower interest, or a completed deal."],
+        ["Lead unlock", "The Rs. 20 lead fee unlocks one contact/chat lead. Once a lead is unlocked or contact access is shown, it is generally non-refundable."],
+        ["Premium listing", "The Rs. 499 monthly premium plan gives higher listing placement and unlimited posts for the active period. It does not guarantee deals or responses."],
+        ["Failed payments", "If money is deducted but the paid feature is not activated, users should contact support with payment ID, phone number, and date. Valid duplicate or failed payments may be refunded after verification."],
+        ["Cancellation", "Premium benefits can be stopped for future periods. Already used lead credits, active month benefits, and completed verification reviews are generally not cancellable."]
+      ]
+    },
+    risk: {
+      title: "Lending Risk Notice",
+      sections: [
+        ["Important warning", "MoneyBridge is not for guaranteed repayment. A lender may lose money if the borrower does not repay. A borrower may face legal and financial consequences if they fail to repay."],
+        ["Verify independently", "Meet safely, verify government ID, address, income, references, written agreement, repayment plan, and applicable legal limits before lending or borrowing."],
+        ["No pressure", "Do not lend or borrow under pressure, emergency manipulation, fake identity, unrealistic returns, threats, or emotional blackmail."],
+        ["Legal compliance", "Users are responsible for complying with all lending, tax, interest, privacy, documentation, and recovery laws applicable to them."],
+        ["Final decision", "Every transaction is a private decision between users. MoneyBridge only provides discovery, communication, and trust tools."]
+      ]
+    }
+  },
+  hi: {
+    terms: {
+      title: "Terms & Conditions",
+      sections: [
+        ["Platform role", "MoneyBridge borrowers और lenders को एक-दूसरे को खोजने और contact करने में मदद करने वाला technology platform है। MoneyBridge bank, NBFC, loan provider, repayment guarantor, recovery agent या financial advisor नहीं है।"],
+        ["User responsibility", "Lend या borrow करने से पहले identity, documents, repayment ability, source of funds, agreement terms, interest, tenure और legal compliance खुद verify करना user की जिम्मेदारी है।"],
+        ["No guarantee", "MoneyBridge loan approval, lender availability, borrower authenticity, repayment, recovery, profit, interest income या किसी financial outcome की guarantee नहीं देता।"],
+        ["User conduct", "Users false information, fake identity, harassment, illegal interest, threats या कानून के खिलाफ activity नहीं कर सकते।"],
+        ["Account action", "Misuse, fraud, suspicious activity या policy violation होने पर MoneyBridge account, listing, message या payment access restrict/remove कर सकता है।"]
+      ]
+    },
+    privacy: {
+      title: "Privacy Policy",
+      sections: [
+        ["Information collected", "हम mobile number, profile details, city/location preference, listings, messages, payment status, verification status और uploaded KYC documents collect कर सकते हैं।"],
+        ["Use of information", "Data platform चलाने, listings दिखाने, OTP login, paid features, verification review, fraud prevention और safety improve करने के लिए use होता है।"],
+        ["Sharing", "Contact details visibility settings और lead rules के अनुसार दिखते हैं। Payments Razorpay से और auth/database/storage/hosting Firebase/Google services से होते हैं।"],
+        ["KYC documents", "KYC uploads review और trust features के लिए use होते हैं। Users केवल अपने valid documents upload करें।"],
+        ["User control", "Users profile data correction, restriction या deletion request कर सकते हैं, legal, safety, fraud-prevention और accounting needs के अधीन।"]
+      ]
+    },
+    refund: {
+      title: "Refund & Cancellation Policy",
+      sections: [
+        ["Paid verification", "Rs. 199 verification fee review और trust-profile processing के लिए है। यह approval, deal या response की guarantee नहीं है।"],
+        ["Lead unlock", "Rs. 20 lead fee एक contact/chat lead unlock करती है। Contact दिखने के बाद generally refund नहीं होता।"],
+        ["Premium listing", "Rs. 499 monthly premium active period में higher placement और unlimited posts देता है। यह deals या responses guarantee नहीं करता।"],
+        ["Failed payments", "Payment कट जाए लेकिन feature activate न हो तो payment ID, phone number और date के साथ support से contact करें। Valid duplicate/failed payments verification के बाद refund हो सकते हैं।"],
+        ["Cancellation", "Premium future period के लिए stop किया जा सकता है। Used lead credits, active month benefits और completed verification reviews generally cancellable नहीं हैं।"]
+      ]
+    },
+    risk: {
+      title: "Lending Risk Notice",
+      sections: [
+        ["Important warning", "MoneyBridge guaranteed repayment के लिए नहीं है। Borrower repay न करे तो lender का money loss हो सकता है। Borrower repay न करे तो legal/financial consequences हो सकते हैं।"],
+        ["Verify independently", "Lend या borrow करने से पहले government ID, address, income, references, written agreement, repayment plan और legal limits खुद verify करें।"],
+        ["No pressure", "Pressure, fake identity, unrealistic returns, threats या emotional blackmail में lend/borrow न करें।"],
+        ["Legal compliance", "Lending, tax, interest, privacy, documentation और recovery laws follow करना users की जिम्मेदारी है।"],
+        ["Final decision", "हर transaction users के बीच private decision है। MoneyBridge केवल discovery, communication और trust tools देता है।"]
+      ]
+    }
+  }
+};
+
 function t(key) {
   const language = languageSelect?.value || localStorage.getItem("moneybridge-language") || "en";
   return translations[language]?.[key] || translations.en[key] || key;
+}
+
+function activeLegalDocs() {
+  const language = languageSelect?.value || localStorage.getItem("moneybridge-language") || "en";
+  return legalDocs[language] || legalDocs.en;
+}
+
+function openLegalDoc(docKey) {
+  const doc = activeLegalDocs()[docKey] || legalDocs.en[docKey];
+  if (!doc) return;
+  legalDialogTitle.textContent = doc.title;
+  legalDialogBody.innerHTML = doc.sections.map(([heading, text]) => `
+    <section>
+      <h3>${heading}</h3>
+      <p>${text}</p>
+    </section>
+  `).join("");
+  legalDialog.showModal();
 }
 
 function setText(selector, value) {
@@ -591,6 +703,12 @@ function translatePage() {
   if (paymentStatus && !paymentStatus.textContent) {
     paymentStatus.textContent = `${t("verifyBoost")} ${t("freeLeadNotice")} Free leads used: ${freeLeadsUsed}/3. Paid lead credits: ${paidLeadCredits}.`;
   }
+  document.querySelector("#legalCenterTitle").textContent = t("legalCenter");
+  document.querySelector("#legalCenterHelp").textContent = t("legalCenterHelp");
+  document.querySelector('[data-legal-doc="terms"]').textContent = t("legalTerms");
+  document.querySelector('[data-legal-doc="privacy"]').textContent = t("legalPrivacy");
+  document.querySelector('[data-legal-doc="refund"]').textContent = t("legalRefund");
+  document.querySelector('[data-legal-doc="risk"]').textContent = t("legalRisk");
   document.querySelector("#otpDialog .dialog-head h2").textContent = t("borrowerOtpSignup");
   document.querySelector("#sendOtpBtn").textContent = t("sendOtp");
   document.querySelector("label[for='otpInput']");
@@ -774,7 +892,7 @@ async function startRazorpayPayment(plan) {
       return;
     }
     const idToken = await firebaseAuth.currentUser.getIdToken();
-    const order = await postJson("/.netlify/functions/create-razorpay-order", {
+    const order = await postJson("/api/create-razorpay-order", {
       plan,
       phone: localStorage.getItem("moneybridge-borrower-mobile") || "",
       idToken
@@ -794,7 +912,7 @@ async function startRazorpayPayment(plan) {
       theme: { color: "#0f766e" },
       handler: async (response) => {
         paymentStatus.textContent = "Verifying payment...";
-        const verifiedPayment = await postJson("/.netlify/functions/verify-razorpay-payment", {
+        const verifiedPayment = await postJson("/api/verify-razorpay-payment", {
           plan,
           orderId: response.razorpay_order_id,
           paymentId: response.razorpay_payment_id,
@@ -846,6 +964,7 @@ document.querySelectorAll("[data-view]").forEach((button) => {
 document.querySelector("#closeDetail").addEventListener("click", () => detailDialog.close());
 document.querySelector("#closePost").addEventListener("click", () => postDialog.close());
 document.querySelector("#closeOtp").addEventListener("click", () => otpDialog.close());
+document.querySelector("#closeLegal").addEventListener("click", () => legalDialog.close());
 document.querySelector("#desktopPostBtn").addEventListener("click", () => postDialog.showModal());
 document.querySelector("#mobilePostBtn").addEventListener("click", () => postDialog.showModal());
 
@@ -872,12 +991,6 @@ sendOtpBtn.addEventListener("click", async () => {
   sendOtpBtn.disabled = true;
   otpHelp.textContent = "Sending OTP...";
   try {
-    if (phoneNumber === "+919599555953") {
-      firebaseOtpConfirmation = null;
-      testOtpSession = { phoneNumber, code: "123456" };
-      otpHelp.textContent = "Test OTP ready. Enter 123456 to verify. No SMS will be sent for this test number.";
-      return;
-    }
     firebaseOtpConfirmation = await withTimeout(
       signInWithPhoneNumber(firebaseAuth, phoneNumber, getRecaptchaVerifier()),
       30000,
@@ -935,6 +1048,10 @@ document.querySelector("#otpForm").addEventListener("submit", async (event) => {
 
 document.querySelectorAll(".payment-btn").forEach((button) => {
   button.addEventListener("click", () => startRazorpayPayment(button.dataset.plan));
+});
+
+document.querySelectorAll(".legal-link").forEach((button) => {
+  button.addEventListener("click", () => openLegalDoc(button.dataset.legalDoc));
 });
 
 kycForm.addEventListener("submit", submitKycRequest);

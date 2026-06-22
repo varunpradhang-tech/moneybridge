@@ -216,6 +216,18 @@
             </article>
             <p id="paymentStatus" aria-live="polite"></p>
           </div>
+          <div class="legal-card">
+            <div>
+              <strong id="legalCenterTitle">Legal & policies</strong>
+              <small id="legalCenterHelp">Review the terms, privacy, refund policy, and lending risk notice before using MoneyBridge.</small>
+            </div>
+            <div class="legal-actions">
+              <button class="secondary-btn compact legal-link" data-legal-doc="terms" type="button">Terms</button>
+              <button class="secondary-btn compact legal-link" data-legal-doc="privacy" type="button">Privacy</button>
+              <button class="secondary-btn compact legal-link" data-legal-doc="refund" type="button">Refunds</button>
+              <button class="secondary-btn compact legal-link" data-legal-doc="risk" type="button">Risk notice</button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -353,6 +365,14 @@
       <label class="check-row"><input id="termsAccept" type="checkbox"> I understand and accept these terms.</label>
       <button class="primary-btn" id="acceptTermsBtn" type="button">Accept and continue</button>
     </div>
+  </dialog>
+
+  <dialog id="legalDialog">
+    <div class="dialog-head">
+      <h2 id="legalDialogTitle">Legal</h2>
+      <button class="icon-btn" id="closeLegal" type="button" aria-label="Close">×</button>
+    </div>
+    <div class="legal-doc" id="legalDialogBody"></div>
   </dialog>
 
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
