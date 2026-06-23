@@ -752,7 +752,7 @@ function translatePage() {
   document.querySelector("#postDialog .dialog-head h2").textContent = t("createPost");
   document.querySelector("#postPlanStatus").textContent = isPremiumUser ? t("premiumActive") : `${t("postPlanFree")} Posts used: ${monthlyPostsUsed}/3.`;
   updateLeadResetHelp();
-  if (paymentStatus && !paymentStatus.textContent) {
+  if (paymentStatus) {
     ensureFreeLeadWindow();
     paymentStatus.textContent = isPremiumUser
       ? `${t("premiumActive")} Contact/chat leads are included with Premium, so no ₹20 lead charge applies.`
