@@ -187,6 +187,7 @@ const otpInput = document.querySelector("#otpInput");
 const borrowerPurpose = document.querySelector("#borrowerPurpose");
 const sendOtpBtn = document.querySelector("#sendOtpBtn");
 const paymentStatus = document.querySelector("#paymentStatus");
+const leadResetHelp = document.querySelector("#leadResetHelp");
 const termsDialog = document.querySelector("#termsDialog");
 const termsAccept = document.querySelector("#termsAccept");
 const acceptTermsBtn = document.querySelector("#acceptTermsBtn");
@@ -750,12 +751,12 @@ function translatePage() {
   document.querySelector("#messages .section-head p").textContent = t("messagesIntro");
   document.querySelector("#postDialog .dialog-head h2").textContent = t("createPost");
   document.querySelector("#postPlanStatus").textContent = isPremiumUser ? t("premiumActive") : `${t("postPlanFree")} Posts used: ${monthlyPostsUsed}/3.`;
+  updateLeadResetHelp();
   if (paymentStatus && !paymentStatus.textContent) {
     ensureFreeLeadWindow();
-    const leadSummary = isPremiumUser
-      ? "Premium active: contact/message lead charges are waived."
-      : `Free leads used: ${freeLeadsUsed}/${FREE_LEAD_LIMIT}. Reset: ${freeLeadResetDateText()}. Paid lead credits: ${paidLeadCredits}.`;
-    paymentStatus.textContent = `${t("verifyBoost")} ${t("freeLeadNotice")} ${leadSummary}`;
+    paymentStatus.textContent = isPremiumUser
+      ? `${t("premiumActive")} Contact/chat leads are included with Premium, so no ₹20 lead charge applies.`
+      : `${t("verifyBoost")} ${t("freeLeadNotice")} Free leads used: ${freeLeadsUsed}/${FREE_LEAD_LIMIT}. Reset: ${freeLeadResetDateText()}. Paid lead credits: ${paidLeadCredits}.`;
   }
   document.querySelector("#legalCenterTitle").textContent = t("legalCenter");
   document.querySelector("#legalCenterHelp").textContent = t("legalCenterHelp");
@@ -885,6 +886,16 @@ function freeLeadResetDateText() {
   });
 }
 
+function updateLeadResetHelp() {
+  if (!leadResetHelp) return;
+  ensureFreeLeadWindow();
+  if (isPremiumUser) {
+    leadResetHelp.textContent = "Premium includes unlimited contact/chat access. No lead reset is needed.";
+    return;
+  }
+  leadResetHelp.textContent = `Free leads used: ${freeLeadsUsed}/${FREE_LEAD_LIMIT}. Your 3 free leads reset on ${freeLeadResetDateText()} after the 30-day cycle.`;
+}
+
 function persistLeadState(options = {}) {
   localStorage.setItem("moneybridge-free-leads-used", String(freeLeadsUsed));
   localStorage.setItem("moneybridge-free-leads-window-start", String(freeLeadWindowStartedAt));
@@ -914,6 +925,7 @@ function unlockLead(item) {
     status = `${t("freeLeadWait")} Next reset: ${freeLeadResetDateText()}.`;
   }
   persistLeadState();
+  updateLeadResetHelp();
   if (detailDialog.open && detailBody.querySelector(".terms")) {
     detailBody.querySelector(".terms").textContent = status;
   } else {
@@ -926,12 +938,14 @@ function applyPaidPlan(plan) {
   if (plan === "lead") {
     paidLeadCredits += 1;
     persistLeadState();
+    updateLeadResetHelp();
     paymentStatus.textContent = `Payment verified. ${t("leadPlan")} added. Lead credits: ${paidLeadCredits}.`;
     return;
   }
   if (plan === "premium") {
     isPremiumUser = true;
     localStorage.setItem("moneybridge-premium-active", "true");
+    updateLeadResetHelp();
     paymentStatus.textContent = `Payment verified. ${t("premiumActive")}`;
     translatePage();
     renderListings();
