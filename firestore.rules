@@ -23,6 +23,8 @@ service cloud.firestore {
         "phone",
         "mobileVerified",
         "borrowerPurpose",
+        "freeLeadsUsed",
+        "freeLeadWindowStartedAt",
         "kycStatus",
         "kycRequestedAt",
         "createdAt",
@@ -35,6 +37,8 @@ service cloud.firestore {
         "phone",
         "mobileVerified",
         "borrowerPurpose",
+        "freeLeadsUsed",
+        "freeLeadWindowStartedAt",
         "kycStatus",
         "kycRequestedAt",
         "updatedAt"
@@ -45,11 +49,8 @@ service cloud.firestore {
       return owns(userId)
         && request.resource.data.phone is string
         && request.resource.data.mobileVerified is bool
-        && (!("verifiedProfile" in request.resource.data))
-        && (!("premium" in request.resource.data))
-        && (!("leadCredits" in request.resource.data))
-        && (!("lastPaymentAt" in request.resource.data))
-        && (!("premiumUntil" in request.resource.data));
+        && (!("freeLeadsUsed" in request.resource.data) || (request.resource.data.freeLeadsUsed is int && request.resource.data.freeLeadsUsed >= 0 && request.resource.data.freeLeadsUsed <= 3))
+        && (!("freeLeadWindowStartedAt" in request.resource.data) || (request.resource.data.freeLeadWindowStartedAt is int && request.resource.data.freeLeadWindowStartedAt > 0));
     }
 
     function validListingOwner() {
