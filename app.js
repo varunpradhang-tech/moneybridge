@@ -250,8 +250,8 @@ const translations = {
     premiumListing: "Premium listing", reportUser: "Report user", blockUser: "Block user", userBlocked: "User blocked from your home feed.",
     userReported: "Report saved for admin review.", paymentReady: "Razorpay integration placeholder ready for", verifiedProfilePlan: "Verified profile",
     premiumPlan: "Premium listing", leadPlan: "Lead unlock", termsRequired: "Please accept terms to continue.",
-    freeLeadNotice: "Free users get 3 contact/chat leads every 30 days. Verified users can buy extra leads for ₹20. Premium users can message/contact without lead charges.",
-    verifyBoost: "Verified users have a higher chance of getting deals. Get verified to build trust and move your listings above normal free listings.",
+    freeLeadNotice: "3 free contact/chat leads reset every 30 days. Extra paid leads are ₹20 each for verified users.",
+    verifyBoost: "Verified profiles appear above normal free listings and help users trust you.",
     verifyBeforeLead: "Please verify your profile first. ₹20 lead unlock is available only for verified users.",
     verifiedNow: "Profile verified. Your listings now get better trust and higher placement than normal free listings.",
     freeLeadUsed: "Free lead used", leadUnlocked: "Lead unlocked. Contact number:", buyLeadNeeded: "Free leads finished. Verified users can buy a ₹20 lead, or Premium users can contact without lead charges.",
@@ -291,8 +291,8 @@ const translations = {
     premiumListing: "Premium listing", reportUser: "User report करें", blockUser: "User block करें", userBlocked: "User home feed से block हो गया।",
     userReported: "Report admin review के लिए save हो गई।", paymentReady: "Razorpay integration placeholder ready for", verifiedProfilePlan: "Verified profile",
     premiumPlan: "Premium listing", leadPlan: "Lead unlock", termsRequired: "Continue करने के लिए terms accept करें।",
-    freeLeadNotice: "Free users को हर 30 दिन में 3 contact/chat leads मिलती हैं। Verified users extra leads ₹20 में खरीद सकते हैं। Premium users बिना lead charge के message/contact कर सकते हैं।",
-    verifyBoost: "Verified users की deals मिलने की chance ज्यादा होती है। Trust बढ़ाने और free listings से ऊपर दिखने के लिए profile verify करें।",
+    freeLeadNotice: "हर 30 दिन में 3 free contact/chat leads reset होती हैं। Verified users extra paid leads ₹20 में खरीद सकते हैं।",
+    verifyBoost: "Verified profiles normal free listings से ऊपर दिखती हैं और trust बढ़ाती हैं।",
     verifyBeforeLead: "पहले profile verify करें। ₹20 lead unlock केवल verified users के लिए है।",
     verifiedNow: "Profile verified. आपकी listings normal free listings से ऊपर दिखेंगी।",
     freeLeadUsed: "Free lead used", leadUnlocked: "Lead unlocked. Contact number:", buyLeadNeeded: "Free leads खत्म हो गईं। Verified users ₹20 lead खरीद सकते हैं, या Premium users बिना lead charge contact कर सकते हैं।",
@@ -528,6 +528,13 @@ function updateProfileVerificationUi(userData = {}) {
       kycStatus.textContent = "KYC submitted. Admin review is pending.";
     }
   }
+  updateLeadResetHelp();
+  updatePaymentButtons();
+  if (paymentStatus) {
+    paymentStatus.textContent = isPremiumUser
+      ? `${t("premiumActive")} Contact/chat leads are included with Premium, so no ₹20 lead charge applies.`
+      : `${t("verifyBoost")} ${t("freeLeadNotice")} Free leads used: ${freeLeadsUsed}/${FREE_LEAD_LIMIT}. Next reset: ${freeLeadResetDateText()}. Paid lead credits: ${paidLeadCredits}.`;
+  }
 }
 
 async function syncCurrentUserProfile(user) {
@@ -752,11 +759,12 @@ function translatePage() {
   document.querySelector("#postDialog .dialog-head h2").textContent = t("createPost");
   document.querySelector("#postPlanStatus").textContent = isPremiumUser ? t("premiumActive") : `${t("postPlanFree")} Posts used: ${monthlyPostsUsed}/3.`;
   updateLeadResetHelp();
+  updatePaymentButtons();
   if (paymentStatus) {
     ensureFreeLeadWindow();
     paymentStatus.textContent = isPremiumUser
       ? `${t("premiumActive")} Contact/chat leads are included with Premium, so no ₹20 lead charge applies.`
-      : `${t("verifyBoost")} ${t("freeLeadNotice")} Free leads used: ${freeLeadsUsed}/${FREE_LEAD_LIMIT}. Reset: ${freeLeadResetDateText()}. Paid lead credits: ${paidLeadCredits}.`;
+      : `${t("verifyBoost")} ${t("freeLeadNotice")} Free leads used: ${freeLeadsUsed}/${FREE_LEAD_LIMIT}. Next reset: ${freeLeadResetDateText()}. Paid lead credits: ${paidLeadCredits}.`;
   }
   document.querySelector("#legalCenterTitle").textContent = t("legalCenter");
   document.querySelector("#legalCenterHelp").textContent = t("legalCenterHelp");
@@ -894,6 +902,24 @@ function updateLeadResetHelp() {
     return;
   }
   leadResetHelp.textContent = `Free leads used: ${freeLeadsUsed}/${FREE_LEAD_LIMIT}. Your 3 free leads reset on ${freeLeadResetDateText()} after the 30-day cycle.`;
+}
+
+function updatePaymentButtons() {
+  const verifiedButton = document.querySelector('[data-plan="verified"]');
+  const leadButton = document.querySelector('[data-plan="lead"]');
+  const premiumButton = document.querySelector('[data-plan="premium"]');
+  if (verifiedButton) {
+    verifiedButton.textContent = isVerifiedUser ? "Verified active" : "Pay with Razorpay";
+    verifiedButton.disabled = isVerifiedUser;
+  }
+  if (leadButton) {
+    leadButton.textContent = isPremiumUser ? "Included in premium" : "Buy lead";
+    leadButton.disabled = isPremiumUser;
+  }
+  if (premiumButton) {
+    premiumButton.textContent = isPremiumUser ? "Premium active" : "Buy premium";
+    premiumButton.disabled = isPremiumUser;
+  }
 }
 
 function persistLeadState(options = {}) {
