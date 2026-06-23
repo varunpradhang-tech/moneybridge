@@ -202,7 +202,10 @@ let recaptchaVerifier;
 let firebaseOtpConfirmation;
 let testOtpSession = null;
 const blockedUsers = new Set(JSON.parse(localStorage.getItem("moneybridge-blocked-users") || "[]"));
+const FREE_LEAD_LIMIT = 3;
+const FREE_LEAD_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 let freeLeadsUsed = Number(localStorage.getItem("moneybridge-free-leads-used") || "0");
+let freeLeadWindowStartedAt = Number(localStorage.getItem("moneybridge-free-leads-window-start") || "0");
 let paidLeadCredits = Number(localStorage.getItem("moneybridge-paid-lead-credits") || "0");
 let monthlyPostsUsed = Number(localStorage.getItem("moneybridge-monthly-posts-used") || "0");
 let isPremiumUser = localStorage.getItem("moneybridge-premium-active") === "true";
@@ -246,11 +249,13 @@ const translations = {
     premiumListing: "Premium listing", reportUser: "Report user", blockUser: "Block user", userBlocked: "User blocked from your home feed.",
     userReported: "Report saved for admin review.", paymentReady: "Razorpay integration placeholder ready for", verifiedProfilePlan: "Verified profile",
     premiumPlan: "Premium listing", leadPlan: "Lead unlock", termsRequired: "Please accept terms to continue.",
-    freeLeadNotice: "First 3 leads are free. After that each contact/chat lead is ₹20.",
+    freeLeadNotice: "Free users get 3 contact/chat leads every 30 days. Verified users can buy extra leads for ₹20. Premium users can message/contact without lead charges.",
     verifyBoost: "Verified users have a higher chance of getting deals. Get verified to build trust and move your listings above normal free listings.",
     verifyBeforeLead: "Please verify your profile first. ₹20 lead unlock is available only for verified users.",
     verifiedNow: "Profile verified. Your listings now get better trust and higher placement than normal free listings.",
-    freeLeadUsed: "Free lead used", leadUnlocked: "Lead unlocked. Contact number:", buyLeadNeeded: "Free leads finished. Buy a ₹20 lead to see contact number or chat.",
+    freeLeadUsed: "Free lead used", leadUnlocked: "Lead unlocked. Contact number:", buyLeadNeeded: "Free leads finished. Verified users can buy a ₹20 lead, or Premium users can contact without lead charges.",
+    freeLeadWait: "Free leads finished for this 30-day period. Your next 3 free leads will unlock automatically after the reset date.",
+    premiumLeadUnlocked: "Premium active. Contact/message unlocked without using free or paid leads.",
     paidLeadUsed: "Paid lead used", premiumActive: "Premium active: unlimited posts and top results.", freePostLimit: "Free listing limit reached: 3 posts per month. Buy Premium for ₹499/month for unlimited posts.",
     postPlanFree: "Free listing: 3 posts per month. Premium: unlimited posts and top results.",
     idVerified: "Govt. ID verified", pending: "Verification pending", viewProfile: "View profile", message: "Message",
@@ -285,11 +290,13 @@ const translations = {
     premiumListing: "Premium listing", reportUser: "User report करें", blockUser: "User block करें", userBlocked: "User home feed से block हो गया।",
     userReported: "Report admin review के लिए save हो गई।", paymentReady: "Razorpay integration placeholder ready for", verifiedProfilePlan: "Verified profile",
     premiumPlan: "Premium listing", leadPlan: "Lead unlock", termsRequired: "Continue करने के लिए terms accept करें।",
-    freeLeadNotice: "पहले 3 leads free हैं। उसके बाद contact/chat lead ₹20 की होगी।",
+    freeLeadNotice: "Free users को हर 30 दिन में 3 contact/chat leads मिलती हैं। Verified users extra leads ₹20 में खरीद सकते हैं। Premium users बिना lead charge के message/contact कर सकते हैं।",
     verifyBoost: "Verified users की deals मिलने की chance ज्यादा होती है। Trust बढ़ाने और free listings से ऊपर दिखने के लिए profile verify करें।",
     verifyBeforeLead: "पहले profile verify करें। ₹20 lead unlock केवल verified users के लिए है।",
     verifiedNow: "Profile verified. आपकी listings normal free listings से ऊपर दिखेंगी।",
-    freeLeadUsed: "Free lead used", leadUnlocked: "Lead unlocked. Contact number:", buyLeadNeeded: "Free leads खत्म हो गईं। Contact number या chat के लिए ₹20 lead खरीदें।",
+    freeLeadUsed: "Free lead used", leadUnlocked: "Lead unlocked. Contact number:", buyLeadNeeded: "Free leads खत्म हो गईं। Verified users ₹20 lead खरीद सकते हैं, या Premium users बिना lead charge contact कर सकते हैं।",
+    freeLeadWait: "इस 30-day period की free leads खत्म हो गईं। Reset date के बाद 3 free leads फिर unlock होंगी।",
+    premiumLeadUnlocked: "Premium active है। Free या paid lead use किए बिना contact/message unlocked.",
     paidLeadUsed: "Paid lead used", premiumActive: "Premium active: unlimited posts और top results.", freePostLimit: "Free listing limit reached: महीने में 3 posts. Unlimited posts के लिए ₹499/month Premium खरीदें।",
     postPlanFree: "Free listing: महीने में 3 posts. Premium: unlimited posts और top results.",
     idVerified: "सरकारी ID verified", pending: "Verification pending", viewProfile: "Profile देखें", message: "Message",
@@ -502,6 +509,13 @@ function updateProfileVerificationUi(userData = {}) {
     paidLeadCredits = Number(userData.leadCredits);
     persistLeadState();
   }
+  if (Number.isFinite(Number(userData.freeLeadsUsed))) {
+    freeLeadsUsed = Number(userData.freeLeadsUsed);
+  }
+  if (Number.isFinite(Number(userData.freeLeadWindowStartedAt))) {
+    freeLeadWindowStartedAt = Number(userData.freeLeadWindowStartedAt);
+  }
+  ensureFreeLeadWindow();
 
   if (profileVerificationBadge) {
     profileVerificationBadge.textContent = approved ? t("idVerified") : t("pending");
@@ -737,7 +751,11 @@ function translatePage() {
   document.querySelector("#postDialog .dialog-head h2").textContent = t("createPost");
   document.querySelector("#postPlanStatus").textContent = isPremiumUser ? t("premiumActive") : `${t("postPlanFree")} Posts used: ${monthlyPostsUsed}/3.`;
   if (paymentStatus && !paymentStatus.textContent) {
-    paymentStatus.textContent = `${t("verifyBoost")} ${t("freeLeadNotice")} Free leads used: ${freeLeadsUsed}/3. Paid lead credits: ${paidLeadCredits}.`;
+    ensureFreeLeadWindow();
+    const leadSummary = isPremiumUser
+      ? "Premium active: contact/message lead charges are waived."
+      : `Free leads used: ${freeLeadsUsed}/${FREE_LEAD_LIMIT}. Reset: ${freeLeadResetDateText()}. Paid lead credits: ${paidLeadCredits}.`;
+    paymentStatus.textContent = `${t("verifyBoost")} ${t("freeLeadNotice")} ${leadSummary}`;
   }
   document.querySelector("#legalCenterTitle").textContent = t("legalCenter");
   document.querySelector("#legalCenterHelp").textContent = t("legalCenterHelp");
@@ -850,21 +868,50 @@ function showDetails(item) {
   detailDialog.showModal();
 }
 
-function persistLeadState() {
+function ensureFreeLeadWindow(now = Date.now()) {
+  if (!freeLeadWindowStartedAt || now - freeLeadWindowStartedAt >= FREE_LEAD_WINDOW_MS) {
+    freeLeadWindowStartedAt = now;
+    freeLeadsUsed = 0;
+  }
+  persistLeadState({ sync: false });
+}
+
+function freeLeadResetDateText() {
+  ensureFreeLeadWindow();
+  return new Date(freeLeadWindowStartedAt + FREE_LEAD_WINDOW_MS).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric"
+  });
+}
+
+function persistLeadState(options = {}) {
   localStorage.setItem("moneybridge-free-leads-used", String(freeLeadsUsed));
+  localStorage.setItem("moneybridge-free-leads-window-start", String(freeLeadWindowStartedAt));
   localStorage.setItem("moneybridge-paid-lead-credits", String(paidLeadCredits));
+  if (options.sync !== false && firebaseAuth.currentUser) {
+    updateCurrentUserProfile({
+      freeLeadsUsed,
+      freeLeadWindowStartedAt
+    }).catch((error) => console.warn("Lead state sync failed:", error));
+  }
 }
 
 function unlockLead(item) {
   let status = "";
-  if (freeLeadsUsed < 3) {
+  ensureFreeLeadWindow();
+  if (isPremiumUser) {
+    status = `${t("premiumLeadUnlocked")} ${t("leadUnlocked")} ${item.phone || "Hidden"}`;
+  } else if (freeLeadsUsed < FREE_LEAD_LIMIT) {
     freeLeadsUsed += 1;
-    status = `${t("freeLeadUsed")} ${freeLeadsUsed}/3. ${t("leadUnlocked")} ${item.phone || "Hidden"}`;
-  } else if (paidLeadCredits > 0) {
+    status = `${t("freeLeadUsed")} ${freeLeadsUsed}/${FREE_LEAD_LIMIT}. ${t("leadUnlocked")} ${item.phone || "Hidden"}`;
+  } else if (isVerifiedUser && paidLeadCredits > 0) {
     paidLeadCredits -= 1;
     status = `${t("paidLeadUsed")}. ${t("leadUnlocked")} ${item.phone || "Hidden"}`;
+  } else if (isVerifiedUser) {
+    status = `${t("buyLeadNeeded")} Next free reset: ${freeLeadResetDateText()}.`;
   } else {
-    status = t("buyLeadNeeded");
+    status = `${t("freeLeadWait")} Next reset: ${freeLeadResetDateText()}.`;
   }
   persistLeadState();
   if (detailDialog.open && detailBody.querySelector(".terms")) {
