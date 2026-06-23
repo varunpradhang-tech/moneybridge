@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f766e">
+  <title>MoneyBridge</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="rail" aria-label="Primary">
+      <div class="brand">
+        <span class="brand-mark">M</span>
+        <span>MoneyBridge</span>
+      </div>
+      <button class="nav-item active" data-view="home" aria-label="Home">
+        <span class="icon" aria-hidden="true">⌂</span><span>Home</span>
+      </button>
+      <button class="nav-item" data-view="settings" aria-label="Settings">
+        <span class="icon" aria-hidden="true">⚙</span><span>Settings</span>
+      </button>
+      <button class="nav-item" data-view="profile" aria-label="Profile">
+        <span class="icon" aria-hidden="true">◉</span><span>Profile</span>
+      </button>
+      <button class="nav-item" data-view="messages" aria-label="Messages">
+        <span class="icon" aria-hidden="true">✉</span><span>Messages</span>
+      </button>
+    </aside>
+
+    <main>
+      <section class="topbar">
+        <div>
+          <p class="eyebrow">Verified lending marketplace</p>
+          <h1>MoneyBridge</h1>
+        </div>
+        <button class="primary-btn desktop-post" id="desktopPostBtn">+ Post</button>
+      </section>
+
+      <section id="home" class="view active-view" aria-label="Home">
+        <div class="search-panel">
+          <label class="search-box">
+            <span class="icon" aria-hidden="true">⌕</span>
+            <input id="searchInput" type="search" placeholder="Search by amount, city, name, lender or receiver">
+          </label>
+          <div class="filters">
+            <label>
+              Location
+              <select id="locationFilter">
+                <option value="">All</option>
+                <option>Mumbai</option>
+                <option>Delhi</option>
+                <option>Bengaluru</option>
+                <option>Hyderabad</option>
+                <option>Pune</option>
+              </select>
+            </label>
+            <label>
+              Type
+              <select id="typeFilter">
+                <option value="">All</option>
+                <option value="provider">Provider</option>
+                <option value="receiver">Receiver</option>
+              </select>
+            </label>
+            <label>
+              Max interest
+              <select id="interestFilter">
+                <option value="">Any</option>
+                <option value="10">10%</option>
+                <option value="15">15%</option>
+                <option value="20">20%</option>
+                <option value="25">25%</option>
+              </select>
+            </label>
+            <label>
+              Amount
+              <select id="amountFilter">
+                <option value="">Any</option>
+                <option value="50000">Up to ₹50k</option>
+                <option value="100000">Up to ₹1L</option>
+                <option value="300000">Up to ₹3L</option>
+                <option value="600000">Up to ₹6L</option>
+              </select>
+            </label>
+            <label>
+              Loan purpose
+              <select id="purposeFilter">
+                <option value="">All</option>
+                <option>Let's discuss</option>
+                <option>Business</option>
+                <option>Medical</option>
+                <option>Education</option>
+                <option>Home repair</option>
+                <option>Debt consolidation</option>
+                <option>Personal emergency</option>
+              </select>
+            </label>
+            <label>
+              Verification
+              <select id="verificationFilter">
+                <option value="">All users</option>
+                <option value="verified">Verified users only</option>
+                <option value="unverified">Unverified users only</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="status-row">
+          <span id="resultCount">0 profiles</span>
+          <span>Govt. ID verified profiles are marked</span>
+        </div>
+
+        <div class="cards-grid" id="listingGrid"></div>
+      </section>
+
+      <section id="settings" class="view" aria-label="Settings">
+        <div class="section-head">
+          <h2>Settings</h2>
+          <p>Control security, notifications, location and account preferences.</p>
+        </div>
+        <div class="settings-list">
+          <label class="toggle-row stacked">
+            <span><strong>Theme</strong><small>Choose how the app looks on this device.</small></span>
+            <select id="themeSelect" aria-label="Theme">
+              <option value="system">Use device setting</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </label>
+          <label class="toggle-row stacked">
+            <span><strong>Language</strong><small>Choose your preferred app language.</small></span>
+            <select id="languageSelect" aria-label="Language">
+              <option value="en">English</option>
+              <option value="hi">Hindi</option>
+              <option value="pa">Punjabi</option>
+              <option value="mr">Marathi</option>
+              <option value="gu">Gujarati</option>
+              <option value="ta">Tamil</option>
+              <option value="te">Telugu</option>
+              <option value="kn">Kannada</option>
+              <option value="or">Odia</option>
+              <option value="bn">Bengali</option>
+              <option value="es">Spanish</option>
+              <option value="zh">Chinese</option>
+              <option value="de">German</option>
+              <option value="fr">French</option>
+              <option value="ar">Arabic</option>
+              <option value="pt">Portuguese</option>
+              <option value="ru">Russian</option>
+              <option value="ja">Japanese</option>
+              <option value="ko">Korean</option>
+            </select>
+          </label>
+          <label class="toggle-row">
+            <span><strong>Use current location</strong><small>Show nearby providers and receivers first.</small></span>
+            <input type="checkbox" checked>
+          </label>
+          <label class="toggle-row">
+            <span><strong>New match alerts</strong><small>Notify when a matching amount appears near you.</small></span>
+            <input id="notificationToggle" type="checkbox">
+          </label>
+          <div class="permission-row">
+            <div>
+              <strong id="notificationStatus">Notifications not enabled</strong>
+              <small>Browser permission is required before alerts can be sent.</small>
+            </div>
+            <button class="secondary-btn compact" id="permissionBtn" type="button">Allow</button>
+          </div>
+          <label class="toggle-row">
+            <span><strong>Hide exact address</strong><small>Only city and distance will be visible publicly.</small></span>
+            <input type="checkbox" checked>
+          </label>
+          <label class="toggle-row stacked">
+            <span><strong>Contact visibility</strong><small>Choose who can see your mobile number.</small></span>
+            <select id="contactVisibility" aria-label="Contact visibility">
+              <option value="matched">Only matched users</option>
+              <option value="verified">Verified users only</option>
+              <option value="everyone">Everyone</option>
+              <option value="hidden">Hide from everyone</option>
+            </select>
+          </label>
+          <label class="toggle-row">
+            <span><strong>Require verified ID to message</strong><small>Reduce spam and unsafe contact.</small></span>
+            <input type="checkbox" checked>
+          </label>
+          <div class="refer-card">
+            <div>
+              <strong>Refer & Earn</strong>
+              <small>Invite verified users and earn rewards after their first completed agreement.</small>
+            </div>
+            <div class="refer-code" id="referCode">MB-ARJUN-25</div>
+            <button class="primary-btn" id="shareReferralBtn" type="button">Share invite</button>
+            <p id="shareStatus" aria-live="polite"></p>
+          </div>
+          <div class="pricing-grid">
+            <article class="pricing-card">
+              <strong>Verified profile</strong>
+              <span>₹199</span>
+              <small>Verified users look more trusted and appear above normal free listings, below Premium.</small>
+              <button class="primary-btn payment-btn" data-plan="verified" type="button">Pay with Razorpay</button>
+            </article>
+            <article class="pricing-card">
+              <strong>Buy lead</strong>
+              <span>₹20</span>
+              <small>Available after profile verification. Unlock one extra contact number and chat after 3 free leads.</small>
+              <button class="primary-btn payment-btn" data-plan="lead" type="button">Buy lead</button>
+              <small class="lead-reset-note" id="leadResetHelp">3 free leads reset every 30 days.</small>
+            </article>
+            <article class="pricing-card">
+              <strong>Premium listing</strong>
+              <span>₹499/mo</span>
+              <small>Unlimited monthly posts, premium posts shown in top results, and contact/chat leads included without ₹20 lead charges.</small>
+              <button class="primary-btn payment-btn" data-plan="premium" type="button">Buy premium</button>
+            </article>
+            <p id="paymentStatus" aria-live="polite"></p>
+          </div>
+          <div class="legal-card">
+            <div>
+              <strong id="legalCenterTitle">Legal & policies</strong>
+              <small id="legalCenterHelp">Review the terms, privacy, refund policy, and lending risk notice before using MoneyBridge.</small>
+            </div>
+            <div class="legal-actions">
+              <button class="secondary-btn compact legal-link" data-legal-doc="terms" type="button">Terms</button>
+              <button class="secondary-btn compact legal-link" data-legal-doc="privacy" type="button">Privacy</button>
+              <button class="secondary-btn compact legal-link" data-legal-doc="refund" type="button">Refunds</button>
+              <button class="secondary-btn compact legal-link" data-legal-doc="risk" type="button">Risk notice</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="profile" class="view" aria-label="Profile">
+        <div class="profile-layout">
+          <div class="profile-card">
+            <div class="avatar large">AR</div>
+            <h2>Arjun Rao</h2>
+            <p>Mumbai, Maharashtra</p>
+            <span class="verified">ID verification pending</span>
+            <button class="primary-btn profile-action" id="borrowerSignupBtn" type="button">Borrower mobile OTP signup</button>
+            <small id="borrowerSignupStatus">Borrower mobile not verified</small>
+          </div>
+          <form class="profile-form" id="kycForm">
+            <label>Full name<input name="fullName" id="profileFullName" value="Arjun Rao"></label>
+            <label>Mobile number<input name="mobile" id="profileMobile" value="+91 98765 43210"></label>
+            <label>City<input name="city" id="profileCity" value="Mumbai"></label>
+            <label>Government ID type
+              <select name="idType" id="kycIdType">
+                <option>Aadhaar</option>
+                <option>PAN</option>
+                <option>Passport</option>
+                <option>Driving license</option>
+              </select>
+            </label>
+            <label>Upload ID document<input name="idDocument" id="kycFile" type="file" accept="image/*,.pdf"></label>
+            <p class="helper-text" id="kycStatus">Upload your ID document for manual admin review.</p>
+            <button type="submit" class="primary-btn">Submit for verification</button>
+          </form>
+        </div>
+      </section>
+
+      <section id="messages" class="view" aria-label="Messages">
+        <div class="section-head">
+          <h2>Messages</h2>
+          <p>Conversations with matched lenders and receivers.</p>
+        </div>
+        <div class="message-list" id="messageList"></div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Primary">
+      <button class="tab active" data-view="home" aria-label="Home"><span>⌂</span><small>Home</small></button>
+      <button class="tab" data-view="settings" aria-label="Settings"><span>⚙</span><small>Settings</small></button>
+      <button class="post-fab" id="mobilePostBtn" aria-label="Create post">+</button>
+      <button class="tab" data-view="profile" aria-label="Profile"><span>◉</span><small>Profile</small></button>
+      <button class="tab" data-view="messages" aria-label="Messages"><span>✉</span><small>Messages</small></button>
+    </nav>
+  </div>
+
+  <dialog id="detailDialog">
+    <div class="dialog-head">
+      <h2 id="detailName">Profile</h2>
+      <button class="icon-btn" id="closeDetail" aria-label="Close">×</button>
+    </div>
+    <div id="detailBody"></div>
+  </dialog>
+
+  <dialog id="postDialog">
+    <div class="dialog-head">
+      <h2>Create post</h2>
+      <button class="icon-btn" id="closePost" aria-label="Close">×</button>
+    </div>
+    <form id="postForm" class="post-form">
+      <label>I am a
+        <select name="type">
+          <option value="provider">Money provider</option>
+          <option value="receiver">Money receiver</option>
+        </select>
+      </label>
+      <label>Amount <input name="amount" type="number" min="1000" step="1000" value="50000"></label>
+      <label>Interest rate
+        <select name="interestChoice">
+          <option>Let's discuss</option>
+          <option value="10">10%</option>
+          <option value="12">12%</option>
+          <option value="15">15%</option>
+          <option value="18">18%</option>
+          <option value="24">24%</option>
+        </select>
+      </label>
+      <label>Loan purpose
+        <select name="purpose">
+          <option>Let's discuss</option>
+          <option>Business</option>
+          <option>Medical</option>
+          <option>Education</option>
+          <option>Home repair</option>
+          <option>Debt consolidation</option>
+          <option>Personal emergency</option>
+        </select>
+      </label>
+      <label>Duration <input name="duration" value="6 months"></label>
+      <label>Location <input name="city" value="Mumbai"></label>
+      <label>Terms and conditions <textarea name="terms" rows="4">Monthly repayment. Verified ID and signed agreement required.</textarea></label>
+      <p class="helper-text" id="postPlanStatus">Free listing: 3 posts per month. Premium: unlimited posts and top results.</p>
+      <button class="primary-btn" type="submit">Publish post</button>
+    </form>
+  </dialog>
+
+  <dialog id="otpDialog">
+    <div class="dialog-head">
+      <h2>Borrower OTP signup</h2>
+      <button class="icon-btn" id="closeOtp" aria-label="Close">×</button>
+    </div>
+    <form id="otpForm" class="post-form">
+      <label>Mobile number <input name="mobile" id="otpMobile" value="+91 98765 43210"></label>
+      <label>Loan purpose
+        <select name="borrowerPurpose" id="borrowerPurpose">
+          <option>Let's discuss</option>
+          <option>Business</option>
+          <option>Medical</option>
+          <option>Education</option>
+          <option>Home repair</option>
+          <option>Debt consolidation</option>
+          <option>Personal emergency</option>
+        </select>
+      </label>
+      <label>Referral code (optional) <input name="referralCode" id="otpReferralCode" placeholder="Example: MB-ARJUN-25"></label>
+      <button class="secondary-btn" id="sendOtpBtn" type="button">Send OTP</button>
+      <div id="recaptcha-container" class="recaptcha-box"></div>
+      <label>Enter OTP <input name="otp" id="otpInput" inputmode="numeric" placeholder="Enter 6 digit OTP"></label>
+      <p class="helper-text" id="otpHelp">Enter your mobile number, complete the security check, then send OTP.</p>
+      <button class="primary-btn" type="submit">Verify and create borrower account</button>
+    </form>
+  </dialog>
+
+  <dialog id="termsDialog">
+    <div class="dialog-head">
+      <h2>Terms and risk notice</h2>
+    </div>
+    <div class="terms-box">
+      <p>MoneyBridge is a discovery platform for borrowers and lenders. It is not a bank, NBFC, loan guarantor, repayment guarantor, or legal recovery service.</p>
+      <p>This app is not for guaranteed repayment. Each user takes responsibility for their own money and should lend only after independently verifying the other person, documents, agreement, and legal compliance.</p>
+      <p>Use proper written agreements, comply with all applicable financial laws, and never lend or borrow under pressure, fraud, or false identity.</p>
+      <label class="check-row"><input id="termsAccept" type="checkbox"> I understand and accept these terms.</label>
+      <button class="primary-btn" id="acceptTermsBtn" type="button">Accept and continue</button>
+    </div>
+  </dialog>
+
+  <dialog id="legalDialog">
+    <div class="dialog-head">
+      <h2 id="legalDialogTitle">Legal</h2>
+      <button class="icon-btn" id="closeLegal" type="button" aria-label="Close">×</button>
+    </div>
+    <div class="legal-doc" id="legalDialogBody"></div>
+  </dialog>
+
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

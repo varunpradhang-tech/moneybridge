@@ -166,7 +166,7 @@ exports.verifyRazorpayPayment = onRequest({ region: "asia-south1" }, async (req,
 });
 
 exports.applyReferralRewards = onDocumentUpdated({
-  region: "asia-south1",
+  region: "asia-south2",
   document: "users/{userId}"
 }, async (event) => {
   const before = event.data?.before?.data() || {};
