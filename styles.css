@@ -527,6 +527,15 @@ select, input, textarea {
   color: var(--muted);
 }
 
+.lead-reset-note {
+  display: block;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--brand) 8%, var(--panel));
+  color: var(--brand-dark);
+  font-weight: 750;
+}
+
 #paymentStatus {
   width: 100%;
   margin: 0;
