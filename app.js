@@ -185,6 +185,7 @@ const otpHelp = document.querySelector("#otpHelp");
 const otpMobile = document.querySelector("#otpMobile");
 const otpInput = document.querySelector("#otpInput");
 const borrowerPurpose = document.querySelector("#borrowerPurpose");
+const otpReferralCode = document.querySelector("#otpReferralCode");
 const sendOtpBtn = document.querySelector("#sendOtpBtn");
 const paymentStatus = document.querySelector("#paymentStatus");
 const leadResetHelp = document.querySelector("#leadResetHelp");
@@ -239,7 +240,7 @@ const translations = {
     enabled: "Notifications enabled", blocked: "Notifications blocked in browser", notEnabled: "Notifications not enabled", allow: "Allow",
     hideAddress: "Hide exact address", hideAddressHelp: "Only city and distance will be visible publicly.",
     requireVerified: "Require verified ID to message", requireVerifiedHelp: "Reduce spam and unsafe contact.",
-    refer: "Refer & Earn", referHelp: "Invite verified users and earn rewards after their first completed agreement.", shareInvite: "Share invite",
+    refer: "Refer & Earn", referHelp: "Invite a verified user. Get 1 lead after OTP + KYC, 3 total leads if they buy Verified profile. The new user gets 1 extra lead after verification.", shareInvite: "Share invite",
     inviteShared: "Invite shared.", inviteCopied: "Referral invite copied.", inviteText: "Join me on MoneyBridge with referral code",
     contactVisibility: "Contact visibility", contactVisibilityHelp: "Choose who can see your mobile number.",
     matchedOnly: "Only matched users", verifiedOnly: "Verified users only", everyone: "Everyone", hidden: "Hide from everyone",
@@ -280,7 +281,7 @@ const translations = {
     enabled: "Notifications enabled", blocked: "Notifications browser में blocked हैं", notEnabled: "Notifications enabled नहीं हैं", allow: "अनुमति दें",
     hideAddress: "सटीक पता छिपाएं", hideAddressHelp: "सार्वजनिक रूप से केवल शहर और दूरी दिखेगी।",
     requireVerified: "Message के लिए verified ID जरूरी", requireVerifiedHelp: "Spam और unsafe contact कम करें।",
-    refer: "Refer & Earn", referHelp: "Verified users को invite करें और reward earn करें।", shareInvite: "Invite share करें",
+    refer: "Refer & Earn", referHelp: "Verified user invite करें। OTP + KYC के बाद 1 lead, Verified profile खरीदने पर total 3 leads मिलेंगी। New user को verification के बाद 1 extra lead मिलेगा।", shareInvite: "Invite share करें",
     inviteShared: "Invite share हो गया।", inviteCopied: "Referral invite copy हो गया।", inviteText: "MoneyBridge पर मेरे साथ जुड़ें, referral code",
     contactVisibility: "Contact visibility", contactVisibilityHelp: "कौन आपका मोबाइल नंबर देख सकता है, चुनें।",
     matchedOnly: "केवल matched users", verifiedOnly: "केवल verified users", everyone: "सभी", hidden: "सबसे छिपाएं",
@@ -497,10 +498,52 @@ function setBorrowerVerified(isVerified) {
   borrowerSignupStatus.textContent = isVerified ? t("borrowerVerified") : t("borrowerNotVerified");
 }
 
+function normalizeReferralCode(value = "") {
+  return String(value).trim().toUpperCase().replace(/\s+/g, "-").replace(/[^A-Z0-9-]/g, "");
+}
+
+function getOwnReferralCode(user) {
+  const saved = normalizeReferralCode(localStorage.getItem("moneybridge-referral-code"));
+  if (saved && saved !== "MB-ARJUN-25") return saved;
+  const seed = user?.uid || localStorage.getItem("moneybridge-firebase-uid") || "ARJUN25";
+  const code = `MB-${String(seed).replace(/[^a-z0-9]/gi, "").slice(0, 8).toUpperCase() || "ARJUN25"}`;
+  localStorage.setItem("moneybridge-referral-code", code);
+  return code;
+}
+
+function setOwnReferralCode(userOrCode) {
+  const code = typeof userOrCode === "string" ? normalizeReferralCode(userOrCode) : getOwnReferralCode(userOrCode);
+  if (!code) return;
+  localStorage.setItem("moneybridge-referral-code", code);
+  if (referCode) referCode.textContent = code;
+}
+
+function getStoredReferralCode(user) {
+  const code = normalizeReferralCode(localStorage.getItem("moneybridge-referred-by-code") || otpReferralCode?.value || "");
+  const ownCode = normalizeReferralCode(getOwnReferralCode(user));
+  return code && code !== ownCode ? code : "";
+}
+
+function applyReferralFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const code = normalizeReferralCode(params.get("ref"));
+  if (!code) return;
+  localStorage.setItem("moneybridge-referred-by-code", code);
+  if (otpReferralCode) otpReferralCode.value = code;
+}
+
 function updateProfileVerificationUi(userData = {}) {
   const approved = userData.verifiedProfile === true || userData.kycStatus === "approved" || userData.aadharVerified === true;
   isVerifiedUser = approved;
   localStorage.setItem("moneybridge-verified-profile", String(approved));
+  if (userData.referralCode) {
+    setOwnReferralCode(userData.referralCode);
+  }
+  if (userData.referredByCode && otpReferralCode && !otpReferralCode.value) {
+    const referredByCode = normalizeReferralCode(userData.referredByCode);
+    localStorage.setItem("moneybridge-referred-by-code", referredByCode);
+    otpReferralCode.value = referredByCode;
+  }
 
   if (typeof userData.premium === "boolean") {
     isPremiumUser = userData.premium;
@@ -547,10 +590,13 @@ async function syncCurrentUserProfile(user) {
 
 async function saveUserProfile(user, extra = {}) {
   if (!user?.uid) return;
+  const referredByCode = getStoredReferralCode(user);
   await setDoc(doc(firebaseDb, "users", user.uid), {
     phone: user.phoneNumber || localStorage.getItem("moneybridge-borrower-mobile") || "",
     mobileVerified: Boolean(user.phoneNumber) || localStorage.getItem("moneybridge-borrower-verified") === "true",
     borrowerPurpose: localStorage.getItem("moneybridge-borrower-purpose") || borrowerPurpose?.value || "Let's discuss",
+    referralCode: getOwnReferralCode(user),
+    ...(referredByCode ? { referredByCode } : {}),
     updatedAt: serverTimestamp(),
     ...extra
   }, { merge: true });
@@ -1152,6 +1198,11 @@ document.querySelector("#otpForm").addEventListener("submit", async (event) => {
   otpHelp.textContent = "Verifying OTP...";
   try {
     const result = await firebaseOtpConfirmation.confirm(otpInput.value.trim());
+    const referredByCode = getStoredReferralCode(result.user);
+    if (referredByCode) {
+      localStorage.setItem("moneybridge-referred-by-code", referredByCode);
+    }
+    setOwnReferralCode(result.user);
     localStorage.setItem("moneybridge-borrower-mobile", result.user.phoneNumber || normalizePhoneNumber(otpMobile.value));
     localStorage.setItem("moneybridge-firebase-uid", result.user.uid);
     localStorage.setItem("moneybridge-borrower-purpose", borrowerPurpose.value);
@@ -1159,6 +1210,7 @@ document.querySelector("#otpForm").addEventListener("submit", async (event) => {
     saveUserProfile(result.user, {
       borrowerPurpose: borrowerPurpose.value,
       mobileVerified: true,
+      ...(referredByCode ? { referredByCode } : {}),
       createdAt: serverTimestamp()
     }).catch((error) => {
       console.warn("Profile save after OTP failed:", error);
@@ -1202,7 +1254,9 @@ notificationToggle.addEventListener("change", async () => {
 });
 
 shareReferralBtn.addEventListener("click", async () => {
-  const inviteText = `${t("inviteText")} ${referCode.textContent}`;
+  const code = normalizeReferralCode(referCode.textContent);
+  const inviteUrl = `${window.location.origin}${window.location.pathname}?ref=${encodeURIComponent(code)}`;
+  const inviteText = `${t("inviteText")} ${code}: ${inviteUrl}`;
   try {
     if (navigator.share) {
       await navigator.share({ title: "MoneyBridge invite", text: inviteText });
@@ -1258,6 +1312,7 @@ document.querySelector("#postForm").addEventListener("submit", async (event) => 
 onAuthStateChanged(firebaseAuth, async (user) => {
   if (!user) return;
   localStorage.setItem("moneybridge-firebase-uid", user.uid);
+  setOwnReferralCode(user);
   if (user.phoneNumber) {
     localStorage.setItem("moneybridge-borrower-mobile", user.phoneNumber);
     setBorrowerVerified(true);
@@ -1280,6 +1335,10 @@ if ("serviceWorker" in navigator) {
 
 renderListings();
 renderMessages();
+applyReferralFromUrl();
+if (localStorage.getItem("moneybridge-referral-code")) {
+  setOwnReferralCode(localStorage.getItem("moneybridge-referral-code"));
+}
 applyTheme(localStorage.getItem("moneybridge-theme") || "system");
 applyLanguage(localStorage.getItem("moneybridge-language") || "en");
 setContactVisibility(localStorage.getItem("moneybridge-contact-visibility") || "matched");

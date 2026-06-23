@@ -23,6 +23,8 @@ service cloud.firestore {
         "phone",
         "mobileVerified",
         "borrowerPurpose",
+        "referralCode",
+        "referredByCode",
         "freeLeadsUsed",
         "freeLeadWindowStartedAt",
         "kycStatus",
@@ -37,6 +39,8 @@ service cloud.firestore {
         "phone",
         "mobileVerified",
         "borrowerPurpose",
+        "referralCode",
+        "referredByCode",
         "freeLeadsUsed",
         "freeLeadWindowStartedAt",
         "kycStatus",
@@ -49,6 +53,8 @@ service cloud.firestore {
       return owns(userId)
         && request.resource.data.phone is string
         && request.resource.data.mobileVerified is bool
+        && (!("referralCode" in request.resource.data) || request.resource.data.referralCode.matches("^MB-[A-Z0-9-]{4,24}$"))
+        && (!("referredByCode" in request.resource.data) || request.resource.data.referredByCode.matches("^MB-[A-Z0-9-]{4,24}$"))
         && (!("freeLeadsUsed" in request.resource.data) || (request.resource.data.freeLeadsUsed is int && request.resource.data.freeLeadsUsed >= 0 && request.resource.data.freeLeadsUsed <= 3))
         && (!("freeLeadWindowStartedAt" in request.resource.data) || (request.resource.data.freeLeadWindowStartedAt is int && request.resource.data.freeLeadWindowStartedAt > 0));
     }
